@@ -14,15 +14,15 @@
 <meta content="일편단심" id="meta_og_title" property="og:title"/>
 <meta content="학교 일을 편하고 단순하고 심플하게! 충남교총 업무경감 플랫폼, 일편단심" name="description"/>
 <meta content="학교 일을 편하고 단순하고 심플하게! 충남교총 업무경감 플랫폼, 일편단심" property="og:description"/>
-<meta content="https://cdn.imweb.me/upload/S202501034b6f80a403cc1/11f71e9814e35.png" id="meta_og_image" property="og:image"/>
+<meta content="assets/img/성연초 교표 원형.png" id="meta_og_image" property="og:image"/>
 <meta content="1200" property="og:image:width"/>
 <meta content="627" property="og:image:height"/>
 <meta content="교사, 양식, 충남교총, 서식, 선생님, 일편단심" name="keywords"/>
 <link href="index.html" rel="canonical"/>
 <link href="https://cdn.imweb.me/thumbnail/20250201/ecbd65501edfd.png" rel="apple-touch-icon-precomposed" sizes="152x152"/>
 <link href="https://cdn.imweb.me/thumbnail/20250201/65c44d08b6728.png" rel="icon" sizes="196x196" type="image/png"/>
-<meta content="https://cdn.imweb.me/thumbnail/20250201/4b2f482e87356.png" name="msapplication-TileImage"/>
-<meta content="https://cdn.imweb.me/thumbnail/20250201/1990c2042a415.png" name="msapplication-square310x310logo"/>
+<meta content="assets/img/성연초 교표 원형.png" name="msapplication-TileImage"/>
+<meta content="assets/img/성연초 교표 원형.png" name="msapplication-square310x310logo"/>
 <meta content="website" property="og:type"/>
 <meta content="width=device-width,viewport-fit=cover,initial-scale=1.0,minimum-scale=0,maximum-scale=10,user-scalable=yes" name="viewport"/><meta content="394b6656a9fa07f8b671c767754a4e5ac0376cc6" name="naver-site-verification"/>
 <meta content="uX4S5XePm2Tt6fDzZ2vbZnfUV_BDPcMs4hBqj0h9Efc" name="google-site-verification"/><link href="https://vendor-cdn.imweb.me/minify_css/vendor_blue_10.css?1653367465" rel="stylesheet" type="text/css"/>
@@ -9403,7 +9403,7 @@
     "@type": "Organization",
     "name": "일편단심",
     "url": "https://www.onlyt.co.kr",
-    "logo": "https://cdn.imweb.me/upload/S202501034b6f80a403cc1/ca16c1c9b9955.png",
+    "logo": "assets/img/성연초 교표 원형.png",
     "address": {
         "@type": "PostalAddress",
         "addressCountry": "KR"
@@ -9412,203 +9412,387 @@
 </meta></meta></meta></meta></head>
 <body class="page_ready doz_sys _body_menu_m20250103f8076a89a202c mobile-nav-on mobile_nav_dep1 page new_header_site" id="doz_body" style=";">
 <div class="se-pre-con" id="loader"></div>
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-
-
-
-const firebaseConfig = {
-
-    apiKey: "AIzaSyDDHetrAhcXGGCy7Q_YQL_7XL5YmlX5kV8",
-
-    authDomain: "onlyt-3a068.firebaseapp.com",
-
-    projectId: "onlyt-3a068",
-
-    storageBucket: "onlyt-3a068.firebasestorage.app",
-
-    messagingSenderId: "557320002910",
-
-    appId: "1:557320002910:web:279b47a6598b418e1183cf"
-
-};
-
-
-
-
-
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
-
-
-
-  function updateVisitorUI(daily, total) {
-
-    let dailyElements = document.querySelectorAll("#daily");
-
-    let totalElements = document.querySelectorAll("#total");
-
-
-
-    dailyElements.forEach((element, index) => {
-
-        element.innerText = daily.toString().trim();
-
-        element.style.display = "inline-block";
-
-        element.style.visibility = "visible";
-
-        element.style.color = "black";
-
-    });
-
-
-
-    totalElements.forEach((element, index) => {
-
-        element.innerText = total.toString().trim();
-
-        element.style.display = "inline-block";
-
-        element.style.visibility = "visible";
-
-        element.style.color = "black";
-
-    });
-
-}
-
-
-
-  
-
-
-
-async function updateVisitorCount() {
-
-    const now = new Date().getTime(); 
-
-    const lastVisit = localStorage.getItem("lastVisit");
-
-
-
-    if (lastVisit && now - parseInt(lastVisit) < 10 * 60 * 1000) {
-
-        return;
-
-    }
-
-
-
-    localStorage.setItem("lastVisit", now);
-
-
-
-    const koreaTime = new Date(now + 9 * 60 * 60 * 1000); 
-
-    const today = koreaTime.toISOString().split("T")[0];
-
-
-
-    const visitorRef = doc(db, "visitors", "count");
-
-    const visitorSnap = await getDoc(visitorRef);
-
-
-
-    if (!visitorSnap.exists()) {
-
-        await setDoc(visitorRef, { daily: 1, total: 1, lastVisit: today });
-
-    } else {
-
-        const data = visitorSnap.data();
-
-        let daily = data.daily ?? 0;
-
-        let total = data.total ?? 0;
-
-
-
-        if (data.lastVisit !== today) {
-
-            daily = 1; 
-
-        } else {
-
-            daily += 1;
-
-        }
-
-        total += 1;
-
-
-
-        await updateDoc(visitorRef, { daily, total, lastVisit: today });
-
-    }
-
-
-
-    displayVisitorCount();
-
-}
-
-
-
-
-
-async function displayVisitorCount() {
-
-    const visitorRef = doc(db, "visitors", "count");
-
-    const visitorSnap = await getDoc(visitorRef);
-
-
-
-    if (visitorSnap.exists()) {
-
-        const data = visitorSnap.data();
-
-        updateVisitorUI(data.daily ?? 0, data.total ?? 0);
-
-    } else {
-
-        console.warn("⚠ Firestore에서 데이터 없음");
-
-    }
-
-}
-
-
-
-
-
-updateVisitorCount();
-
-displayVisitorCount(); 
-
-
-
-
-
+<script type="module">
+
+
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+
+
+
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+
+
+
+
+
+
+const firebaseConfig = {
+
+
+
+    apiKey: "AIzaSyDDHetrAhcXGGCy7Q_YQL_7XL5YmlX5kV8",
+
+
+
+    authDomain: "onlyt-3a068.firebaseapp.com",
+
+
+
+    projectId: "onlyt-3a068",
+
+
+
+    storageBucket: "onlyt-3a068.firebasestorage.app",
+
+
+
+    messagingSenderId: "557320002910",
+
+
+
+    appId: "1:557320002910:web:279b47a6598b418e1183cf"
+
+
+
+};
+
+
+
+
+
+
+
+
+
+
+
+const app = initializeApp(firebaseConfig);
+
+
+
+const db = getFirestore(app);
+
+
+
+
+
+
+
+  function updateVisitorUI(daily, total) {
+
+
+
+    let dailyElements = document.querySelectorAll("#daily");
+
+
+
+    let totalElements = document.querySelectorAll("#total");
+
+
+
+
+
+
+
+    dailyElements.forEach((element, index) => {
+
+
+
+        element.innerText = daily.toString().trim();
+
+
+
+        element.style.display = "inline-block";
+
+
+
+        element.style.visibility = "visible";
+
+
+
+        element.style.color = "black";
+
+
+
+    });
+
+
+
+
+
+
+
+    totalElements.forEach((element, index) => {
+
+
+
+        element.innerText = total.toString().trim();
+
+
+
+        element.style.display = "inline-block";
+
+
+
+        element.style.visibility = "visible";
+
+
+
+        element.style.color = "black";
+
+
+
+    });
+
+
+
+}
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+async function updateVisitorCount() {
+
+
+
+    const now = new Date().getTime(); 
+
+
+
+    const lastVisit = localStorage.getItem("lastVisit");
+
+
+
+
+
+
+
+    if (lastVisit && now - parseInt(lastVisit) < 10 * 60 * 1000) {
+
+
+
+        return;
+
+
+
+    }
+
+
+
+
+
+
+
+    localStorage.setItem("lastVisit", now);
+
+
+
+
+
+
+
+    const koreaTime = new Date(now + 9 * 60 * 60 * 1000); 
+
+
+
+    const today = koreaTime.toISOString().split("T")[0];
+
+
+
+
+
+
+
+    const visitorRef = doc(db, "visitors", "count");
+
+
+
+    const visitorSnap = await getDoc(visitorRef);
+
+
+
+
+
+
+
+    if (!visitorSnap.exists()) {
+
+
+
+        await setDoc(visitorRef, { daily: 1, total: 1, lastVisit: today });
+
+
+
+    } else {
+
+
+
+        const data = visitorSnap.data();
+
+
+
+        let daily = data.daily ?? 0;
+
+
+
+        let total = data.total ?? 0;
+
+
+
+
+
+
+
+        if (data.lastVisit !== today) {
+
+
+
+            daily = 1; 
+
+
+
+        } else {
+
+
+
+            daily += 1;
+
+
+
+        }
+
+
+
+        total += 1;
+
+
+
+
+
+
+
+        await updateDoc(visitorRef, { daily, total, lastVisit: today });
+
+
+
+    }
+
+
+
+
+
+
+
+    displayVisitorCount();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+async function displayVisitorCount() {
+
+
+
+    const visitorRef = doc(db, "visitors", "count");
+
+
+
+    const visitorSnap = await getDoc(visitorRef);
+
+
+
+
+
+
+
+    if (visitorSnap.exists()) {
+
+
+
+        const data = visitorSnap.data();
+
+
+
+        updateVisitorUI(data.daily ?? 0, data.total ?? 0);
+
+
+
+    } else {
+
+
+
+        console.warn("⚠ Firestore에서 데이터 없음");
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+updateVisitorCount();
+
+
+
+displayVisitorCount(); 
+
+
+
+
+
+
+
+
+
+
+
 </script>
 <div class="popup-banner-wrap">
 <div class="pop-container _popup_S202501034b6f80a403cc1_277337" data-pop="S202501034b6f80a403cc1_277337" id="popup_S202501034b6f80a403cc1_277337" style="z-index: 1001;
 					left:150px ;right: auto !important; top:150px ;						">
 <div class="pop-item">
 <div class="pop-img">
-<a class="btl bt-times del" href=";/index.html" onclick="popupCookieMake('S202501034b6f80a403cc1_277337','popup', $(this))" style="color: #979797"></a>
+<a class="btl bt-times del"  onclick="popupCookieMake('S202501034b6f80a403cc1_277337','popup', $(this))" style="color: #979797"></a>
 <a> <img class="" src="https://cdn.imweb.me/upload/S202501034b6f80a403cc1/bca438ae2657e.png" style=" width:480px"/>
 </a>
 </div>
 <div class="btn-group clearfix" style="width: 480px;">
-<a class="btn btn-flat" href=";/index.html" onclick="popupCookieMake('S202501034b6f80a403cc1_277337','popup',$(this))">1일 동안 보지 않음</a>
-<a class="btn btn-flat right" href=";/index.html" onclick="popupClose('S202501034b6f80a403cc1_277337')">닫기</a>
+<a class="btn btn-flat"  onclick="popupCookieMake('S202501034b6f80a403cc1_277337','popup',$(this))">1일 동안 보지 않음</a>
+<a class="btn btn-flat right"  onclick="popupClose('S202501034b6f80a403cc1_277337')">닫기</a>
 </div>
 </div>
 </div>
@@ -9671,17 +9855,17 @@ displayVisitorCount(); 
 <div class="tse-content tab-content _is_tse_content" style="padding-top: 60px;">
 <div class="site-alarm-head _alarm_header">
 <header id="site_alarm_title">알림</header>
-<a class="btn btn-flat goback" href=";/index.html" onclick="ALARM_MENU.showAlarmSlide();"><i aria-hidden="true" class="btm bt-arrow-left"></i><span class="sr-only">뒤로</span></a>
+<a class="btn btn-flat goback" onclick="ALARM_MENU.showAlarmSlide();"><i aria-hidden="true" class="btm bt-arrow-left"></i><span class="sr-only">뒤로</span></a>
 </div>
 <div class="site-alarm-head _setting_header" style="display: none">
 <header id="site_alarm_title_setting">알림 설정</header>
-<a class="btn btn-flat goback" href=";/index.html" onclick="ALARM_MENU.toggleAlarmSetting();"><i aria-hidden="true" class="btm bt-arrow-left"></i><span class="sr-only">뒤로</span></a>
+<a class="btn btn-flat goback" onclick="ALARM_MENU.toggleAlarmSetting();"><i aria-hidden="true" class="btm bt-arrow-left"></i><span class="sr-only">뒤로</span></a>
 </div>
 <div class="site_alarm_list_wrap" id="site_alarm_list_wrap">
 <!--알림 리스트-->
 <div class="notify-body" id="site_alarm_tab"></div>
 <div class="notify-body" id="site_alarm_more_btn" style="display: none;">
-<a class="tile more" href=";/index.html" onclick="ALARM_MENU.getHeaderAlarmList()">
+<a class="tile more" onclick="ALARM_MENU.getHeaderAlarmList()">
 <div class="tile-content">
 								더보기							</div>
 </a>
@@ -9693,8 +9877,8 @@ displayVisitorCount(); 
 <div class="tab-content">
 <div class="tab-pane active">
 <div class="notify-body">
-<a class="board-alaram tile" href=";/index.html">게시물 알림</a>
-<a class="tile" href=";/index.html" onclick="ALARM_MENU.changeAlarmSetting($(this),'','my_post')">
+<a class="board-alaram tile">게시물 알림</a>
+<a class="tile" onclick="ALARM_MENU.changeAlarmSetting($(this),'','my_post')">
 <div class="tile-content">
 <div class="tile-text">
 													내 글 반응													<div class="text-sm text-gray-bright">내가 작성한 게시물이나 댓글에 다른 사람이 댓글이나 답글을 작성하면 알려줍니다.</div>
@@ -9708,7 +9892,7 @@ displayVisitorCount(); 
 </div>
 </div>
 </a>
-<a class="tile" href=";/index.html" onclick="ALARM_MENU.changeAlarmSetting($(this),'','notice')">
+<a class="tile" onclick="ALARM_MENU.changeAlarmSetting($(this),'','notice')">
 <div class="tile-content">
 <div class="tile-text">
 													공지사항													<div class="text-sm text-gray-bright">사이트에서 보내는 중요한 공지를 실시간으로 알려줍니다.</div>
@@ -9738,7 +9922,7 @@ displayVisitorCount(); 
 </div>
 <!-- end#offcanvas-help --><ul class="dropdown-menu animation-dock member_profile" id="member_profile">
 <li class="dropdown-profile text-center">
-<a class="nav-btn-icon profile alarm-toggle _show_alarm" href=";/index.html" id="slide-alarm" onclick="ALARM_MENU.showAlarmSlide();" style="right: 0; position:absolute; right: 0; top:0; font-size:20px; padding:20px; "><i class="icon-bell"></i><span class="sr-only">Alarm</span></a>
+<a class="nav-btn-icon profile alarm-toggle _show_alarm" id="slide-alarm" onclick="ALARM_MENU.showAlarmSlide();" style="right: 0; position:absolute; right: 0; top:0; font-size:20px; padding:20px; "><i class="icon-bell"></i><span class="sr-only">Alarm</span></a>
 <span class="profile-info">
 <div onclick="SITE_MEMBER.editProfile()">
 <img alt="프로필 정보수정" class="img-circle dropdown-avatar-big _profile_img" src="common/img/default_profile.png"/>
@@ -9758,13 +9942,13 @@ displayVisitorCount(); 
 <div class="tse-scrollable _tse_scrollable">
 <div class="tse-content">
 <div class="pc_slide_menu_logo">
-<a href="index.html"><img alt="일편단심" src="https://cdn.imweb.me/upload/S202501034b6f80a403cc1/04c78bcf2c58f.png"/></a>
+<a href="index.html"><img alt="일편단심" src="assets/img/성연초 교표 원형.png"/></a>
 </div>
 <ul class="nav navbar-nav">
 <div class="viewport-nav pc _menu_wrap" style="position:relative">
 <li class="depth-01" data-code="m20250103e2aeb49470276" style="">
 <a class="_fade_link" data-has_child="Y" data-is_folder_menu="N" data-url="AI" href="AI/index.html">
-<span class="plain_name" data-hover="">일편단심 AI</span>
+<span class="plain_name" data-hover="">성연초 AI</span>
 <span class="_toggle_btn toggle-btn"></span>
 </a>
 <ul>
@@ -10297,8 +10481,8 @@ displayVisitorCount(); 
 		</style><header id="doz_header_wrap"><div data-newheader="Y" id="doz_header"><div class="new_org_header _new_org_header"><div class="" id="inline_header_normal" style="min-height: 30px;"> <div class="extend inline-section-wrap fixed_transform" data-type="section-wrap" id="s20250128c6b3b34e68793"><div class="section_bg _section_bg fixed_transform _interactive_bg"></div><div class="section_bg_color _section_bg_color fixed_transform" style="background-color:#fff;  position: absolute;left: 0;top: 0;right: 0; bottom: 0;"></div><div class="inline-inside _inline-inside" data-type="inside"><div class="inline-section" data-type="section" section-code="s20250128c6b3b34e68793"><div class="inline-col-group inline-col-group-left" data-col-group="left" data-type="col-group" style="width:1449px;"><div class="inline-col" data-type="grid"><div class="inline-widget" data-type="widget" id="w20250128093dc902fe9e4"><div class="_widget_data" data-widget-type="inline_logo">
 <div class="widget inline_widget logo text_inline" id="logo_w20250128093dc902fe9e4">
 <div class="img_box _img_box" style="position: relative;">
-<a class="" href="index.html"><span class="sr-only">일편단심</span> <img alt="일편단심" class="normal_logo _front_img" src="https://cdn.imweb.me/thumbnail/20250208/2d5b468866c43.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="213.199570815"/>
-<img alt="일편단심" class="scroll_logo fixed_transform" src="https://cdn.imweb.me/thumbnail/20250208/2d5b468866c43.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="213.199570815"/>
+<a class="" href="index.html"><span class="sr-only">일편단심</span> <img alt="일편단심" class="normal_logo _front_img" src="assets/img/성연초 교표 원형.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="213.199570815"/>
+<img alt="일편단심" class="scroll_logo fixed_transform" src="assets/img/성연초 교표 원형.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="213.199570815"/>
 </a>
 </div>
 </div>
@@ -10306,7 +10490,7 @@ displayVisitorCount(); 
 <div id="padding_w2025020878d0a0fd0dfde" style="min-width:5px; min-height:5px; height:30px;"></div>
 </div>
 </div></div></div><div class="inline-col" data-type="grid"><div class="inline-widget" data-type="widget" id="w202501287f33e4730cd31"><div class="_widget_data" data-widget-type="inline_menu_btn"><div class="widget inline_widget icon_type_menu st00">
-<a class="_no_hover fixed_transform inline-blocked" href=";/index.html" onclick="PC_SLIDE_MENU.slideNavToggle($(this))">
+<a class="_no_hover fixed_transform inline-blocked" onclick="PC_SLIDE_MENU.slideNavToggle($(this))">
 <span class="holder icon_code simple icon-menu" id="inline_menu_alarm_badge"></span>
 <span class="text">MENU</span>
 </a>
@@ -10315,7 +10499,7 @@ displayVisitorCount(); 
 <div class="viewport-nav desktop _main_menu">
 <li class="dropdown _show_m20250103e2aeb49470276 pulldown-hide" data-code="m20250103e2aeb49470276" id="dropdown_m20250103e2aeb49470276" style="">
 <a class="fixed_transform dropdown-toggle disabled _header_dropdown _fade_link" data-toggle="dropdown" data-url="AI" href="AI/index.html">
-<span class="_txt_m20250103e2aeb49470276 plain_name" data-hover="">일편단심 AI</span>
+<span class="_txt_m20250103e2aeb49470276 plain_name" data-hover="">성연초 AI</span>
 </a>
 <ul class="dropdown-menu" role="menu">
 <li class="dropdown-submenu _show_m202502016707d1c6d769e" data-code="m202502016707d1c6d769e" style="">
@@ -10513,8 +10697,8 @@ displayVisitorCount(); 
 </div> </div><div class="first_scroll_fixed" id="inline_header_mobile" style="min-height: 30px;"> <div class="inline-section-wrap fixed_transform" data-type="section-wrap" id="s20250128c02cd306fb6a2"><div class="section_bg _section_bg fixed_transform _interactive_bg"></div><div class="section_bg_color _section_bg_color fixed_transform" style="background-color:#ffffff;  position: absolute;left: 0;top: 0;right: 0; bottom: 0;"></div><div class="inline-inside _inline-inside" data-type="inside"><div class="inline-section" data-type="section" section-code="s20250128c02cd306fb6a2"><div class="inline-col-group inline-col-group-left" data-col-group="left" data-type="col-group" style="width:178px;"><div class="inline-col" data-type="grid"><div class="inline-widget" data-type="widget" id="w202501314e58e9175d638"><div class="_widget_data" data-widget-type="inline_logo">
 <div class="widget inline_widget logo text_inline" id="logo_w202501314e58e9175d638">
 <div class="img_box _img_box" style="position: relative;">
-<a class="" href="index.html"><span class="sr-only">일편단심</span> <img alt="일편단심" class="normal_logo _front_img" src="https://cdn.imweb.me/thumbnail/20250914/3f2c05934b041.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="141.276824034"/>
-<img alt="일편단심" class="scroll_logo fixed_transform" src="https://cdn.imweb.me/thumbnail/20250914/3f2c05934b041.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="141.276824034"/>
+<a class="" href="index.html"><span class="sr-only">일편단심</span> <img alt="일편단심" class="normal_logo _front_img" src="assets/img/성연초 교표 원형.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="141.276824034"/>
+<img alt="일편단심" class="scroll_logo fixed_transform" src="assets/img/성연초 교표 원형.png" style="max-width: 100%;height: auto; image-rendering: -webkit-optimize-contrast;" width="141.276824034"/>
 </a>
 </div>
 </div>
@@ -10528,7 +10712,7 @@ displayVisitorCount(); 
 <div class="mobile_nav_depth depth_0 depth_first st05 _mobile_navigation_menu" id="mobile_carousel_menu_0">
 <div class="nav-item _item" data-code="m20250103e2aeb49470276" data-url="AI">
 <a class="_fade_link" href="AI/index.html" style="">
-<span class="plain_name" data-hover="">일편단심 AI</span>
+<span class="plain_name" data-hover="">성연초 AI</span>
 </a>
 </div>
 <div class="nav-item _item" data-code="m202501031d72850efe954" data-url="file">
@@ -10579,11 +10763,11 @@ displayVisitorCount(); 
     ">⭐ 즐겨찾기 추가</button>
 </body>
 </div></div></div></div><div class="doz_row" doz_flexible="N" doz_grid="12" doz_type="row"><div class="col-dz col-dz-12" doz_flexible="N" doz_grid="12" doz_type="grid"><div doz_type="widget" id="w2025012600d48d857dd0c"><div class="_widget_data" data-widget-anim="none" data-widget-anim-delay="0" data-widget-anim-duration="0.7" data-widget-name="이미지" data-widget-parent-is-mobile="N" data-widget-type="image"><div class="widget image _image_wrap text_position_bottom hover_text_position_bottom visibility hover_image_hidden org_size hover_img_hide">
-<div class="_img_box img_wrap"><img alt="" class="org_image" id="img_w2025012600d48d857dd0c" src="https://cdn.imweb.me/thumbnail/20250521/beeafe4290db1.png" style="visibility:hidden;image-rendering: -webkit-optimize-contrast;"/></div></div>
+<div class="_img_box img_wrap"><img alt="" class="org_image" id="img_w2025012600d48d857dd0c" src="assets/img/성연초 교표 원형.png" style="visibility:hidden;image-rendering: -webkit-optimize-contrast;"/></div></div>
 <script type="application/ld+json">{
     "@context": "http://schema.org",
     "@type": "ImageObject",
-    "contentUrl": "https://cdn.imweb.me/thumbnail/20250521/beeafe4290db1.png"
+    "contentUrl": "assets/img/성연초 교표 원형.png"
 }</script>
 </div></div></div></div></div><div class="inside" doz_type="inside"></div> </main></div><div class="section_wrap mobile_section side_basic" doz_aside="N" doz_category="default" doz_change_mobile="N" doz_extend="N" doz_footer_repeat="N" doz_header_repeat="N" doz_mobile_hide="N" doz_mobile_section="Y" doz_side_margin="0" doz_side_width="230" doz_type="section" id="s202502015c4ddf82f1cbe" style="; ; ;"><div class="section_bg _section_bg _interactive_bg" style="   background-size:cover; background-repeat: no-repeat; position: absolute;left: 0;top: 0;right: 0; bottom: 0;"></div><div class="section_bg_color _section_bg_color" style="  position: absolute;left: 0;top: 0;right: 0; bottom: 0;"></div>
 <main> <div class="inside" doz_type="inside"><div class="doz_row col-xdz col-xdz-12" doz_type="row" doz_xdz="12"><div class="col-dz col-dz- col-xdz col-xdz-4" doz_type="grid" doz_xdz="4"><div doz_type="widget" id="w202502016ab17159914a0"><div class="_widget_data" data-widget-anim="none" data-widget-anim-delay="0" data-widget-anim-duration="0.7" data-widget-name="이미지" data-widget-parent-is-mobile="Y" data-widget-type="image"><div class="widget image _image_wrap text_position_bottom hover_text_position_bottom visibility hover_image_hidden org_size hover_img_hide">
