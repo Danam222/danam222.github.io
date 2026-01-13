@@ -1,32 +1,552 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ClassMate Builder</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Noto Sans KR', sans-serif;
-      }
-    </style>
-  <script type="importmap">
+    
+    <!-- React & ReactDOM & Babel & Lucide -->
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      body { font-family: 'Noto Sans KR', sans-serif; }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+    </style>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Layout, ChevronLeft, ChevronRight, 
+            Plus, X, AlertCircle, Heart, 
+            Users, FileSpreadsheet, Trash2, UserPlus,
+            Download, RefreshCw
+        } from 'lucide-react';
+
+        // --- Utils: CSV Export ---
+        const exportToCSV = (groups, factors) => {
+            const BOM = '\uFEFF';
+            let csvContent = BOM + "반,학생 이름,특성 요약\n";
+
+            groups.forEach((group) => {
+                group.students.forEach((student) => {
+                    const studentFactors = [
+                        ...student.difficulties.map(d => factors.find(f => f.id === d)?.label).filter(Boolean),
+                        ...student.helpers.map(h => factors.find(f => f.id === h)?.label).filter(Boolean)
+                    ].join(', ');
+
+                    const safeName = `"${student.name.replace(/"/g, '""')}"`;
+                    const safeFactors = `"${studentFactors.replace(/"/g, '""')}"`;
+                    csvContent += `${group.name},${safeName},${safeFactors}\n`;
+                });
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `반배정결과_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // --- Component: Step 1 (Setup) ---
+        const Step1Setup = ({ classCount, setClassCount, factors, setFactors }) => {
+            const [newDiff, setNewDiff] = useState('');
+            const [newHelp, setNewHelp] = useState('');
+
+            const addFactor = (label, type) => {
+                if (!label.trim()) return;
+                const newFactor = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    label: label.trim(),
+                    type
+                };
+                setFactors([...factors, newFactor]);
+            };
+
+            const removeFactor = (id) => {
+                setFactors(factors.filter(f => f.id !== id));
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                            <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+                            학급 수 설정
+                        </h2>
+                        <div className="flex items-center space-x-4">
+                            <label className="text-slate-600 font-medium">배정할 총 반의 개수:</label>
+                            <input
+                                type="number"
+                                min="2"
+                                max="20"
+                                value={classCount}
+                                onChange={(e) => setClassCount(parseInt(e.target.value) || 2)}
+                                className="w-24 p-2 border border-slate-300 rounded-lg text-center font-bold text-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                            <span className="text-slate-500 text-sm">반</span>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center text-red-600">
+                                <AlertCircle className="w-5 h-5 mr-2" />
+                                고려 요소 (어려움/지도 필요)
+                            </h3>
+                            <div className="flex space-x-2 mb-4">
+                                <input
+                                    type="text"
+                                    value={newDiff}
+                                    onChange={(e) => setNewDiff(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && (addFactor(newDiff, 'difficulty'), setNewDiff(''))}
+                                    placeholder="예: ADHD, 기초학력부진"
+                                    className="flex-1 p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-200 outline-none"
+                                />
+                                <button
+                                    onClick={() => { addFactor(newDiff, 'difficulty'); setNewDiff(''); }}
+                                    className="bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-100 transition-colors"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {factors.filter(f => f.type === 'difficulty').map(f => (
+                                    <span key={f.id} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-50 text-red-700 border border-red-100">
+                                        {f.label}
+                                        <button onClick={() => removeFactor(f.id)} className="ml-2 hover:text-red-900"><X className="w-3 h-3" /></button>
+                                    </span>
+                                ))}
+                                {factors.filter(f => f.type === 'difficulty').length === 0 && <p className="text-slate-400 text-sm italic">등록된 요소가 없습니다.</p>}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center text-green-600">
+                                <Heart className="w-5 h-5 mr-2" />
+                                도움 요소 (리더십/모범)
+                            </h3>
+                            <div className="flex space-x-2 mb-4">
+                                <input
+                                    type="text"
+                                    value={newHelp}
+                                    onChange={(e) => setNewHelp(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && (addFactor(newHelp, 'helper'), setNewHelp(''))}
+                                    placeholder="예: 회장경험, 성적우수"
+                                    className="flex-1 p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-200 outline-none"
+                                />
+                                <button
+                                    onClick={() => { addFactor(newHelp, 'helper'); setNewHelp(''); }}
+                                    className="bg-green-50 text-green-600 p-2 rounded-lg hover:bg-green-100 transition-colors"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {factors.filter(f => f.type === 'helper').map(f => (
+                                    <span key={f.id} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-50 text-green-700 border border-green-100">
+                                        {f.label}
+                                        <button onClick={() => removeFactor(f.id)} className="ml-2 hover:text-green-900"><X className="w-3 h-3" /></button>
+                                    </span>
+                                ))}
+                                {factors.filter(f => f.type === 'helper').length === 0 && <p className="text-slate-400 text-sm italic">등록된 요소가 없습니다.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Component: Step 2 (Input) ---
+        const Step2Input = ({ students, setStudents }) => {
+            const [inputText, setInputText] = useState('');
+            const [activeTab, setActiveTab] = useState('bulk');
+            const [singleName, setSingleName] = useState('');
+
+            const handleBulkAdd = () => {
+                if (!inputText.trim()) return;
+                const lines = inputText.split('\n');
+                const newStudents = lines
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(line => {
+                        const parts = line.split('\t');
+                        const name = parts[0].trim();
+                        return {
+                            id: Math.random().toString(36).substr(2, 9),
+                            name: name,
+                            difficulties: [],
+                            helpers: []
+                        };
+                    });
+
+                setStudents([...students, ...newStudents]);
+                setInputText('');
+            };
+
+            const handleSingleAdd = () => {
+                if (!singleName.trim()) return;
+                const newStudent = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: singleName.trim(),
+                    difficulties: [],
+                    helpers: []
+                };
+                setStudents([...students, newStudent]);
+                setSingleName('');
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="grid md:grid-cols-2 gap-6 h-[500px]">
+                        <div className="flex flex-col bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-full">
+                            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                                <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                                학생 명단 입력
+                            </h2>
+                            <div className="flex space-x-2 mb-4 bg-slate-100 p-1 rounded-lg">
+                                <button onClick={() => setActiveTab('bulk')} className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'bulk' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    <FileSpreadsheet className="w-4 h-4 inline mr-1" /> 엑셀 붙여넣기
+                                </button>
+                                <button onClick={() => setActiveTab('manual')} className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'manual' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    <UserPlus className="w-4 h-4 inline mr-1" /> 직접 입력
+                                </button>
+                            </div>
+                            {activeTab === 'bulk' ? (
+                                <div className="flex-1 flex flex-col">
+                                    <textarea
+                                        value={inputText}
+                                        onChange={(e) => setInputText(e.target.value)}
+                                        placeholder={`엑셀에서 학생 이름을 복사하여 여기에 붙여넣으세요.\n(한 줄에 한 명씩 인식됩니다)`}
+                                        className="flex-1 w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm font-mono"
+                                    />
+                                    <button onClick={handleBulkAdd} className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium">명단 추가하기</button>
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex flex-col">
+                                    <div className="flex space-x-2">
+                                        <input
+                                            type="text"
+                                            value={singleName}
+                                            onChange={(e) => setSingleName(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSingleAdd()}
+                                            placeholder="학생 이름 입력"
+                                            className="flex-1 p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                        <button onClick={handleSingleAdd} className="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700 transition-colors">추가</button>
+                                    </div>
+                                    <div className="mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-500 flex-1">한 명씩 이름을 입력하고 추가 버튼을 누르거나 엔터를 치세요.</div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-full">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-slate-800 flex items-center"><Users className="w-5 h-5 mr-2" /> 입력된 학생 목록</h3>
+                                <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold">총 {students.length}명</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                                {students.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                        <Users className="w-12 h-12 mb-2 opacity-20" />
+                                        <p>등록된 학생이 없습니다.</p>
+                                    </div>
+                                ) : (
+                                    students.map((student, idx) => (
+                                        <div key={student.id} className="group flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors">
+                                            <div className="flex items-center">
+                                                <span className="text-slate-400 text-xs w-6 mr-2">#{idx + 1}</span>
+                                                <span className="font-medium text-slate-700">{student.name}</span>
+                                            </div>
+                                            <button onClick={() => setStudents(students.filter(s => s.id !== student.id))} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            {students.length > 0 && (
+                                <button onClick={() => setStudents([])} className="mt-4 text-xs text-red-500 hover:text-red-700 underline text-right w-full">전체 삭제</button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Component: Step 3 (Evaluate) ---
+        const Step3Evaluate = ({ students, setStudents, factors }) => {
+            const toggleFactor = (studentId, factorId, type) => {
+                setStudents(students.map(student => {
+                    if (student.id !== studentId) return student;
+                    const targetList = type === 'difficulty' ? student.difficulties : student.helpers;
+                    const newList = targetList.includes(factorId) ? targetList.filter(id => id !== factorId) : [...targetList, factorId];
+                    return { ...student, [type === 'difficulty' ? 'difficulties' : 'helpers']: newList };
+                }));
+            };
+
+            const difficultyFactors = factors.filter(f => f.type === 'difficulty');
+            const helperFactors = factors.filter(f => f.type === 'helper');
+
+            return (
+                <div className="space-y-6 animate-fade-in flex flex-col h-[600px]">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-shrink-0">
+                        <h2 className="text-xl font-bold text-slate-800 mb-1 flex items-center">
+                            <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+                            학생별 특성 체크
+                        </h2>
+                        <p className="text-slate-500 text-sm ml-11">각 학생에 해당하는 특성 요소를 체크해주세요. 이 데이터는 반 배정 알고리즘의 핵심 기준으로 사용됩니다.</p>
+                    </div>
+
+                    <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div className="flex items-center bg-slate-50 border-b border-slate-200 p-4 text-sm font-bold text-slate-600">
+                            <div className="w-32 flex-shrink-0">이름</div>
+                            <div className="flex-1 grid grid-cols-2 gap-4">
+                                <div className="text-red-600 flex items-center"><AlertCircle className="w-4 h-4 mr-1"/> 고려 요소</div>
+                                <div className="text-green-600 flex items-center"><Heart className="w-4 h-4 mr-1"/> 도움 요소</div>
+                            </div>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 p-4 space-y-2 custom-scrollbar">
+                            {students.map((student) => (
+                                <div key={student.id} className="flex items-center p-3 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-colors">
+                                    <div className="w-32 flex-shrink-0 font-medium text-slate-800 truncate pr-2">{student.name}</div>
+                                    <div className="flex-1 grid grid-cols-2 gap-4 border-l border-slate-100 pl-4">
+                                        <div className="flex flex-wrap gap-2">
+                                            {difficultyFactors.length === 0 && <span className="text-xs text-slate-300">-</span>}
+                                            {difficultyFactors.map(f => (
+                                                <label key={f.id} className={`cursor-pointer inline-flex items-center px-2 py-1 rounded-md text-xs border transition-all select-none ${student.difficulties.includes(f.id) ? 'bg-red-100 text-red-700 border-red-200 font-bold' : 'bg-white text-slate-500 border-slate-200 hover:border-red-200'}`}>
+                                                    <input type="checkbox" className="hidden" checked={student.difficulties.includes(f.id)} onChange={() => toggleFactor(student.id, f.id, 'difficulty')} />
+                                                    {f.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 border-l border-slate-100 pl-4">
+                                            {helperFactors.length === 0 && <span className="text-xs text-slate-300">-</span>}
+                                            {helperFactors.map(f => (
+                                                <label key={f.id} className={`cursor-pointer inline-flex items-center px-2 py-1 rounded-md text-xs border transition-all select-none ${student.helpers.includes(f.id) ? 'bg-green-100 text-green-700 border-green-200 font-bold' : 'bg-white text-slate-500 border-slate-200 hover:border-green-200'}`}>
+                                                    <input type="checkbox" className="hidden" checked={student.helpers.includes(f.id)} onChange={() => toggleFactor(student.id, f.id, 'helper')} />
+                                                    {f.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Component: Step 4 (Result) ---
+        const Step4Result = ({ students, factors, classCount }) => {
+            const [groups, setGroups] = useState([]);
+            const [isCalculating, setIsCalculating] = useState(true);
+
+            const calculateDistribution = () => {
+                setIsCalculating(true);
+                setTimeout(() => {
+                    const newGroups = Array.from({ length: classCount }, (_, i) => ({
+                        id: i + 1,
+                        name: `${i + 1}반`,
+                        students: [],
+                        stats: { total: 0, difficultyScore: 0, helperScore: 0 }
+                    }));
+
+                    const sortedStudents = [...students].sort((a, b) => {
+                        const diffA = a.difficulties.length;
+                        const diffB = b.difficulties.length;
+                        if (diffB !== diffA) return diffB - diffA;
+                        return b.helpers.length - a.helpers.length;
+                    });
+
+                    sortedStudents.forEach((student, index) => {
+                        const cycle = Math.floor(index / classCount);
+                        const isSnakeBack = cycle % 2 === 1;
+                        const groupIndex = isSnakeBack ? classCount - 1 - (index % classCount) : index % classCount;
+                        newGroups[groupIndex].students.push(student);
+                    });
+
+                    newGroups.forEach(g => {
+                        g.stats.total = g.students.length;
+                        g.stats.difficultyScore = g.students.reduce((acc, s) => acc + s.difficulties.length, 0);
+                        g.stats.helperScore = g.students.reduce((acc, s) => acc + s.helpers.length, 0);
+                    });
+
+                    setGroups(newGroups);
+                    setIsCalculating(false);
+                }, 800);
+            };
+
+            useEffect(() => { calculateDistribution(); }, []);
+
+            if (isCalculating) {
+                return (
+                    <div className="flex flex-col items-center justify-center h-[500px] animate-fade-in">
+                        <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-lg font-medium text-slate-600">최적의 반 배정 결과를 계산 중입니다...</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-6 animate-fade-in h-[600px] flex flex-col">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-shrink-0 flex justify-between items-center">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800 flex items-center">
+                                <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+                                반 배정 결과
+                            </h2>
+                            <p className="text-slate-500 text-sm mt-1 ml-11">총 {students.length}명의 학생이 {classCount}개 학급으로 배정되었습니다.</p>
+                        </div>
+                        <div className="flex space-x-3">
+                            <button onClick={calculateDistribution} className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors">
+                                <RefreshCw className="w-4 h-4 mr-2" /> 재배정
+                            </button>
+                            <button onClick={() => exportToCSV(groups, factors)} className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-sm transition-colors">
+                                <Download className="w-4 h-4 mr-2" /> 엑셀 저장
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
+                        <div className="flex space-x-4 h-full" style={{ minWidth: `${classCount * 300}px` }}>
+                            {groups.map((group) => (
+                                <div key={group.id} className="w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="p-4 bg-slate-50 border-b border-slate-200">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h3 className="text-lg font-bold text-indigo-900">{group.name}</h3>
+                                            <span className="text-sm font-medium text-slate-500">{group.students.length}명</span>
+                                        </div>
+                                        <div className="flex space-x-4 text-xs">
+                                            <span className="flex items-center text-red-600 bg-red-50 px-2 py-1 rounded"><AlertCircle className="w-3 h-3 mr-1" /> {group.stats.difficultyScore}</span>
+                                            <span className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded"><Heart className="w-3 h-3 mr-1" /> {group.stats.helperScore}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                                        {group.students.map((student) => (
+                                            <div key={student.id} className="p-3 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-indigo-100 transition-colors">
+                                                <div className="font-medium text-slate-800">{student.name}</div>
+                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                    {student.difficulties.map(dId => { const f = factors.find(f => f.id === dId); return f ? <span key={dId} className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded">{f.label}</span> : null; })}
+                                                    {student.helpers.map(hId => { const f = factors.find(f => f.id === hId); return f ? <span key={hId} className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded">{f.label}</span> : null; })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        const App = () => {
+            const [step, setStep] = useState(1);
+            const [classCount, setClassCount] = useState(3);
+            const [factors, setFactors] = useState([
+                { id: 'd1', label: '학습부진', type: 'difficulty' },
+                { id: 'd2', label: '행동주의', type: 'difficulty' },
+                { id: 'h1', label: '리더십', type: 'helper' },
+            ]);
+            const [students, setStudents] = useState([]);
+
+            const nextStep = () => {
+                if (step === 2 && students.length === 0) {
+                    alert("최소 1명 이상의 학생을 입력해주세요.");
+                    return;
+                }
+                setStep(Math.min(4, step + 1));
+            };
+
+            const prevStep = () => setStep(Math.max(1, step - 1));
+
+            return (
+                <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+                    <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[85vh]">
+                        <header className="bg-white border-b border-slate-200 p-6 flex justify-between items-center sticky top-0 z-10">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-indigo-600 rounded-lg"><Layout className="w-6 h-6 text-white" /></div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-slate-900">ClassMate Builder</h1>
+                                    <p className="text-xs text-slate-500">스마트 반 배정 시스템</p>
+                                </div>
+                            </div>
+                            <div className="hidden md:flex items-center space-x-2">
+                                {[1, 2, 3, 4].map((s) => (
+                                    <div key={s} className="flex items-center">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${step >= s ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{s}</div>
+                                        {s !== 4 && <div className={`w-8 h-1 mx-2 ${step > s ? 'bg-indigo-600' : 'bg-slate-100'}`} />}
+                                    </div>
+                                ))}
+                            </div>
+                        </header>
+                        <main className="flex-1 overflow-hidden p-6 bg-slate-50">
+                            <div className="h-full max-w-4xl mx-auto">
+                                {step === 1 && <Step1Setup classCount={classCount} setClassCount={setClassCount} factors={factors} setFactors={setFactors} />}
+                                {step === 2 && <Step2Input students={students} setStudents={setStudents} />}
+                                {step === 3 && <Step3Evaluate students={students} setStudents={setStudents} factors={factors} />}
+                                {step === 4 && <Step4Result students={students} factors={factors} classCount={classCount} />}
+                            </div>
+                        </main>
+                        <footer className="bg-white border-t border-slate-200 p-6 flex justify-between items-center">
+                            <button onClick={prevStep} disabled={step === 1} className={`flex items-center px-6 py-2.5 rounded-lg font-medium transition-all ${step === 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100 hover:text-indigo-600'}`}>
+                                <ChevronLeft className="w-5 h-5 mr-1" /> 이전 단계
+                            </button>
+                            {step < 4 ? (
+                                <button onClick={nextStep} className="flex items-center px-8 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all transform active:scale-95">
+                                    다음 단계 <ChevronRight className="w-5 h-5 ml-1" />
+                                </button>
+                            ) : (
+                                <button onClick={() => setStep(1)} className="text-slate-500 hover:text-indigo-600 font-medium text-sm underline">처음부터 다시하기</button>
+                            )}
+                        </footer>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
 </html>
