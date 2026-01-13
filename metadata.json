@@ -1,0 +1,5 @@
+{
+  "name": "ClassMate Builder",
+  "description": "균형 잡힌 반 배정을 위한 스마트 도구. 학생 특성을 분석하여 최적의 학급 편성을 도와줍니다.",
+  "requestFramePermissions": []
+}
